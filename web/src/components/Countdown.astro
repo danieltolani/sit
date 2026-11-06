@@ -1,0 +1,34 @@
+---
+import { getCalendar } from '../data/calendar';
+const { elections } = await getCalendar();
+const next = elections.find((e) => e.status !== 'Concluded' && Date.parse(e.startsAt) > Date.now());
+---
+{next && (
+  <aside class="countdown" data-target={next.startsAt} aria-label={`Countdown to ${next.title}`}>
+    <p class="label">{next.title} · {next.date}</p>
+    <p class="clock" role="timer" aria-live="off">
+      <span><b data-u="d">--</b>days</span><span><b data-u="h">--</b>hrs</span><span><b data-u="m">--</b>min</span><span><b data-u="s">--</b>sec</span>
+    </p>
+  </aside>
+)}
+<style>
+  .countdown { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 10; text-align: center; background: var(--green); color: #fff; padding: .6rem 1.4rem .8rem; border-radius: 1.6rem; box-shadow: 0 .5rem 1.4rem rgb(0 0 0 / .2); max-width: 94vw; }
+  .label { margin: 0; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
+  .clock { margin: .2rem 0 0; display: flex; gap: 1rem; justify-content: center; }
+  .clock span { display: grid; font-size: .6rem; text-transform: uppercase; letter-spacing: .1em; opacity: .95; }
+  .clock b { font: 400 clamp(1.5rem, 4vw, 2.4rem)/1 Georgia, serif; font-variant-numeric: tabular-nums; }
+</style>
+<script>
+  const el = document.querySelector<HTMLElement>('.countdown');
+  if (el) {
+    const target = Date.parse(el.dataset.target!);
+    const out = Object.fromEntries([...el.querySelectorAll<HTMLElement>('[data-u]')].map((n) => [n.dataset.u!, n]));
+    const tick = () => {
+      const s = Math.max(0, Math.floor((target - Date.now()) / 1000));
+      const v = { d: Math.floor(s / 86400), h: Math.floor(s / 3600) % 24, m: Math.floor(s / 60) % 60, s: s % 60 };
+      for (const k in v) out[k].textContent = String(v[k as keyof typeof v]).padStart(2, '0');
+    };
+    tick();
+    setInterval(tick, 1000);
+  }
+</script>

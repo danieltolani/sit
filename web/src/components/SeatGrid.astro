@@ -1,0 +1,34 @@
+---
+import Chair from './Chair.astro';
+import type { Seat } from '../data/seats';
+interface Props { seats: Seat[] }
+const { seats } = Astro.props;
+---
+<div class="grid">
+  {seats.map((s) => (
+    <div class="card">
+      <Chair label={s.office} tag={s.takenBy ?? `Help ${s.candidate} reserve this seat`} taken={!!s.takenBy} />
+      <h3>{s.candidate}</h3>
+      <p><span class="count" data-count={s.id}>{s.reservedBy}</span> reserved</p>
+      <button class="btn" data-reserve={s.id}>Reserve</button>
+    </div>
+  ))}
+</div>
+<style>
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; padding-block: 1.5rem; }
+  .card { display: grid; justify-items: center; gap: .3rem; background: #fff; border-radius: var(--radius); padding: 1.25rem; }
+</style>
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-reserve]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.reserve!;
+      btn.disabled = true;
+      const res = await fetch(`/api/seats/${id}`, { method: 'POST' });
+      if (res.ok) {
+        const seat = await res.json();
+        document.querySelector(`[data-count="${id}"]`)!.textContent = String(seat.reservedBy);
+      }
+      btn.disabled = false;
+    });
+  });
+</script>

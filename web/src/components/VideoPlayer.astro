@@ -1,0 +1,42 @@
+---
+import { VIDEO_ID } from '../data/claims';
+---
+<aside class="player" hidden data-id={VIDEO_ID} aria-label="Press conference video">
+  <header><span>INEC press conference · <b class="at"></b></span><button type="button" class="close" aria-label="Close video">×</button></header>
+  <iframe title="INEC World Press Conference & National Stakeholders Meeting (Arise News)" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+</aside>
+<style>
+  .player { position: fixed; right: 1rem; bottom: 1rem; z-index: 30; width: min(24rem, calc(100vw - 2rem)); background: #000; color: #fff; border-radius: 1rem; overflow: hidden; box-shadow: 0 1rem 2.4rem rgb(0 0 0 / .35); }
+  header { display: flex; justify-content: space-between; align-items: center; padding: .4rem .5rem .4rem .9rem; font-size: .75rem; }
+  .close { background: none; border: 0; color: #fff; font-size: 1.4rem; line-height: 1; cursor: pointer; }
+  iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
+</style>
+<script>
+  // Timestamp links (a[data-seek]) play the video here instead of opening YouTube.
+  // The iframe loads on first use (nothing is fetched from YouTube until someone asks for it).
+  const panel = document.querySelector<HTMLElement>('.player')!;
+  const frame = panel.querySelector('iframe')!;
+  const at = panel.querySelector('.at')!;
+  const ORIGIN = 'https://www.youtube-nocookie.com';
+  const fmt = (s: number) => [s / 3600, (s / 60) % 60, s % 60].map((n) => String(Math.floor(n)).padStart(2, '0')).join(':');
+
+  document.addEventListener('click', (e) => {
+    const link = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[data-seek]');
+    if (!link) return;
+    e.preventDefault();
+    const sec = Number(link.dataset.seek);
+    panel.hidden = false;
+    at.textContent = fmt(sec);
+    if (!frame.src) {
+      frame.src = `${ORIGIN}/embed/${panel.dataset.id}?start=${sec}&autoplay=1&enablejsapi=1&rel=0&origin=${encodeURIComponent(location.origin)}`;
+    } else {
+      const send = (func: string, args: unknown[] = []) => frame.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), ORIGIN);
+      send('seekTo', [sec, true]);
+      send('playVideo');
+    }
+  });
+  panel.querySelector('.close')!.addEventListener('click', () => {
+    panel.hidden = true;
+    frame.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), ORIGIN);
+  });
+</script>

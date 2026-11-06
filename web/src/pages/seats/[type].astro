@@ -1,0 +1,43 @@
+---
+import Base from '../../layouts/Base.astro';
+import SeatGrid from '../../components/SeatGrid.astro';
+import Stat from '../../components/Stat.astro';
+import { getCalendar } from '../../data/calendar';
+import { getSeatType, listSeats, seatTypes } from '../../data/seats';
+export const prerender = false;
+
+const type = getSeatType(Astro.params.type ?? '');
+if (!type) Astro.response.status = 404;
+const seats = type ? listSeats(type.slug) : [];
+const election = type && (await getCalendar()).elections.find((e) => e.title.startsWith(type.election));
+---
+<Base title={`${type?.name ?? 'Not found'} seats — RAS`}>
+  <section class="wrap">
+    {type ? (
+      <>
+        <p class="crumb"><a href="/seats">Seats</a> / {type.name}</p>
+        <h1>{type.name}</h1>
+        <p class="blurb">{type.blurb}</p>
+        <ul class="facts">
+          {election && <li><span>Election day</span><b>{election.date}</b> · {election.status}</li>}
+          {type.claimId && <li><span>Candidates</span><Stat id={type.claimId} /></li>}
+          <li><span>Seats reserved here</span><b>{seats.reduce((n, s) => n + s.reservedBy, 0)}</b></li>
+        </ul>
+        {seats.length ? <SeatGrid seats={seats} /> : <p class="empty">No candidates loaded for this seat yet.</p>}
+      </>
+    ) : (
+      <>
+        <h1>No such seat</h1>
+        <p>Try one of: {seatTypes.map((t, i) => <><a href={`/seats/${t.slug}`}>{t.slug}</a>{i < seatTypes.length - 1 ? ', ' : '.'}</>)}</p>
+      </>
+    )}
+  </section>
+</Base>
+<style>
+  .crumb { margin-bottom: .5rem; font-size: .85rem; opacity: .7; }
+  .blurb { max-width: 40rem; }
+  .facts { display: flex; flex-wrap: wrap; gap: .6rem; list-style: none; padding: 0; margin: 1rem 0 0; }
+  .facts li { padding: .5rem 1rem; border-radius: 999px; background: #fff; }
+  .facts span { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; opacity: .6; margin-right: .5rem; }
+  .empty { padding-block: 2rem; opacity: .7; }
+</style>

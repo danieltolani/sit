@@ -1,0 +1,176 @@
+00:00:23:21 - 00:00:35:16
+Unknown
+Devil number two. I hope you guys are doing well and that you had a fun Halloween. I had thanks to the amazing projects done by the 30th Johnny students.
+
+00:00:35:18 - 00:00:54:23
+Unknown
+But we are here for the portfolio so let's start. In this episode we're going to talk about purchase, TSL, The View, Russ and monitoring. Let's go.
+
+00:00:55:00 - 00:01:16:02
+Unknown
+It might sound weird to start with the pushes, but I wanted to have something on screen and start having fun with the floor, so why not? I wanted to create starlight bushes using planes and some tricks that I will explain in a minute. So I put it up blender and use the geometry nodes to add planes randomly in the sphere volume.
+
+00:01:16:03 - 00:01:45:18
+Unknown
+So far so good. The main trick to get good looking Stylize Bushes is to not have the normal pointing perpendicular to the plane, but instead to have them pointing to what the outside of the bush. And that's where things get complicated. Unfortunately, blender doesn't let you update the normals that easily. I could try to hack my way through it, but instead I decided to create a drama tree myself in JavaScript.
+
+00:01:45:20 - 00:02:06:07
+Unknown
+In a loop, I created a bunch of plane geometries, positioned them randomly on a sphere that dated their normals attribute to point outside, merge them into one, and there we go.
+
+00:02:06:09 - 00:02:36:19
+Unknown
+For the claw, I did a quick rundown of a bowl in blender, and I used it as a madcap. I don't know yet if mud cups are the way to go for the whole project, but that will do for now and for the leaves. I kept things simple, and I use Figma to place a bunch of white trapezoid shapes on a black background and send it to the alpha map.
+
+00:02:36:21 - 00:03:14:13
+Unknown
+One bush is nice, but hundreds is better when it comes to drawing the same thing multiple times. Three.js provides classes, one of which being the instance mesh. I can now have hundreds of bushes, maybe thousands. Yeah. Still good. Let's organize them a little to make it a bit more natural. And to add some life. I use a parent texture to move the vertices left and right, using TSL to mimic the wind.
+
+00:03:14:15 - 00:03:48:06
+Unknown
+Wait, maybe I should start by explaining what TSL and how to use it. As I mentioned in the previous developed TSL stands for 30 years Shading Language. It's a node based language written in JavaScript, and it will take care of compelling your nodes into Grell for WebGL and Wiesel for WebView. As an example, for something like this, where I want to make the texture wave in the fragment shader, if the experience is being rendered using WebGL, it will be compiled in Grell and look like this.
+
+00:03:48:08 - 00:04:04:01
+Unknown
+If the experience is being rendered using web GPU, it will be compiled in Wiesel and look like that and both will end up looking the same.
+
+00:04:04:03 - 00:04:25:05
+Unknown
+And this is just the tip of the iceberg. TSL is not just about compiling shaders. It will do a lot more in the back, making advanced features accessible through simple function such as backdrop, compute, UV, parallax, and much more.
+
+00:04:25:06 - 00:04:46:15
+Unknown
+Another feature that I love with TSL is that all three.js built in materials are now supported, and we can inject our own logic right inside the material nodes without having to hack our way in the shadow code like we used to do. Let's take back the bushes for a quick example. To make the vertices move in the wind.
+
+00:04:46:16 - 00:05:16:01
+Unknown
+I first retrieved the color from a Perlin texture at world x z coordinates. I updated the vertices position using the position node property and the parent color I've just picked. I move the coordinates of the parent texture with the time so that it slowly changes. I multiply the wind effect by the world wide coordinate so that the base of the bush doesn't move, but the top of the bush moves.
+
+00:05:16:02 - 00:05:30:14
+Unknown
+And there we go. The bush is moving in the wind and it works in WebGL and web GPU. I only provided the texture and all the rest was TSL built in nodes.
+
+00:05:30:16 - 00:05:58:20
+Unknown
+TSL is still in development, but is getting more stable every day, and you can already start using it. If you want to try it. You can check the three.js examples, or you can use the template I provide in the description. By the way, big thanks to the main hotel behind TSL. He has been helping me a lot, solving bugs and even adding features whenever I needed them.
+
+00:05:58:22 - 00:06:24:03
+Unknown
+Until now I was using the camera controls library. It works like the orbit controls class from three.js, but with much more features. Even though camera controls could probably cover my needs, I like to create my own solution for the view in order to have full control from the start, but I like to keep the camera controls for debug purpose, and I can activate it from the tweak panel.
+
+00:06:24:05 - 00:06:41:22
+Unknown
+By the way, when I talk about the view, I'm talking about the camera and everything related to it, like the controls and other features that you will discover in a minute.
+
+00:06:41:24 - 00:07:05:08
+Unknown
+By default, the camera follows the vehicle from above. I like to call that the bird view. The player can zoom in and out currently using the mouse wheel. If the player drags and drop, it will move the camera as soon as a key is being pressed. The camera goes back to the vehicle this way, but drivers can still enjoy the scenery.
+
+00:07:05:10 - 00:07:28:02
+Unknown
+When the vehicle goes fast, the camera moves back a little so that the player can anticipate incoming obstacles. And what are those? Yeah, those are speed lines and they appear all around the screen when the vehicle goes fast to create a speed effect like in animes, cartoons and games.
+
+00:07:28:04 - 00:07:53:23
+Unknown
+Those lines are actually triangles. Let's focus on one triangle in order to understand how it works. First I calculate the distance at which the lines can't be seen. I calculate a random angle. Then I position the three points of the triangle according to that angle, with one vertex in the center and two on the sides, but still at the maximum distance.
+
+00:07:54:01 - 00:08:16:09
+Unknown
+I then calculate the on screen position of the car. I move the middle vertex toward that position and make it oscillate, and I repeat the process for multiple triangles all around the screen with some time offset.
+
+00:08:16:11 - 00:08:43:00
+Unknown
+The view will keep on evolving, but that's a good start. And now the plate resistance. The grass. I love to work on grass. There are multiple ways to get it working, and it implies so many techniques that it's a puzzle I love to solve, especially when you want infinite grass. I used a similar technique than for the Infinite World experiment I created a while back.
+
+00:08:43:06 - 00:08:48:04
+Unknown
+Let me try to explain you how it works.
+
+00:08:48:06 - 00:09:22:18
+Unknown
+I could have used the instance mesh again, and I've seen some convincing grass made like this. But even though instancing is performant, it's not as performant as one unique geometry. I started from a loop to create 250,000 blades. For the sake of the video, I will only draw a few of them. Each blade is defined by a 2D coordinate corresponding to its center on the x and z axis, and I placed them on a grid with some randomness.
+
+00:09:22:20 - 00:09:49:04
+Unknown
+But there's a catch for each vertex I saw the center of the blade only, not the vertex position. I then send an array of coordinates to offset the vertices away from the center. This way, each vertex knows where the center of the blade is, which will get handy in a minute.
+
+00:09:49:06 - 00:10:17:10
+Unknown
+I then move them all in sync with the view, so that we can always see the grass. And here comes the trick. I move the blades center in opposite direction to the view, and I make them loop back whenever they get out of the boundaries. This way we get infinite blades, but we are actually seeing the same blades again and again.
+
+00:10:17:12 - 00:10:52:09
+Unknown
+When seen from the wrong angle. Those grass blades doesn't look very good. The trick here is to rotate them toward the camera. Some like to call this rotation effect pill boarding. I calculate the angle between the center of the blade and the camera, and I rotate the vertices around the center of the blade. I told you that blade center would get handy.
+
+00:10:52:11 - 00:11:18:04
+Unknown
+Since I use mud caps for the bushes. I did the same for the grass. I then darken the bottom of the blade using what I like to call the tip of the blade. The top vertex tip ness is one, while the bottom vertices tip ness are zero. Instead of sending a huge attribute, I use the vertex id with some math.
+
+00:11:18:06 - 00:11:42:23
+Unknown
+Using a varying, I send that tightness to the output node. It's the one handling the final color, and I multiply the result of the madcap by it. When I set to sell, makes injecting code into materials easier. I also applied some variation using the same current texture as earlier.
+
+00:11:43:00 - 00:12:05:21
+Unknown
+For the wind. I use the exact same technique as for the purchase, meaning it's time to refactor. I created a get wind TSL function and I used it for both the grass and the bushes. This version of the wing is slightly more complicated because it takes two times the print texture at different frequencies and also support a direction, but it's the same idea.
+
+00:12:05:23 - 00:12:41:04
+Unknown
+Here comes the biggest challenge for the grass. I wanted the vehicle to leave tracks in the grass, and I wanted those tracks to be precisely behind each wheel. I hope you're ready. This one is tricky. Let's focus on one wheel. I created a 120 weight by one data texture. A data texture is similar to any texture, but we can change the pixel values using a simple array, and it's also easier to change the type and format.
+
+00:12:41:06 - 00:13:20:14
+Unknown
+On each frame, I encode the will contact position into that array, where red is x, green is y, blue is Z, and alpha is one when the wheel touches a surface, and zero otherwise. You might be wondering why. 128 pixels. Here comes the trick. Before updating that first pixel, I move every pixel to the right. To put it in a nutshell, that 128 by one data texture contains the history of the 128 previous positions of the will.
+
+00:13:20:16 - 00:13:35:03
+Unknown
+I then created a plain with 128 subdivisions on the x axis, using a custom TSL shader. I took the coordinate from the data texture to move the vertices of that mesh.
+
+00:13:35:05 - 00:14:02:00
+Unknown
+I also use the previous pixel in order to calculate the angle between the two position, so that I can rotate them. It looks like the trucks are walking, but we are not done yet. The problem now is to find a way to send those tracks to the grass. To do that, I created a ground data class containing a separated scene itself, containing the tracks using an autograph camera above that scene.
+
+00:14:02:01 - 00:14:14:21
+Unknown
+On each frame, I render that scene into a render target. A render to get is kind of a texture in which we can save renders.
+
+00:14:14:23 - 00:14:30:13
+Unknown
+From here you probably know what this is going. I sent the texture, cutting the tracks to the grass and lowered the blades accordingly.
+
+00:14:30:15 - 00:15:00:12
+Unknown
+In the run that I get, I lower the alpha of the tracks to make them disappear on the edges. And that's it. Infinite grass with will tracks. Currently, I only use one channel of the ground data to lower the blade, but I will probably use that class to do more later, so let's keep it that way.
+
+00:15:00:14 - 00:15:22:19
+Unknown
+It's important to start monitoring the experience as early as possible in order to notice potential performance mistakes. There are many tools, and you can already get some insights from the browser dev tools, but I'm going to focus on two solutions I like to use for the stats. Renaud, who also works on TSL, made a library displaying performance data.
+
+00:15:22:21 - 00:15:50:13
+Unknown
+Rono has quite a lot of experience with performance monitoring, so I decided to give it a try and it works flawlessly. We get data about the frame rate, the CPU and the GPU. The library is flexible and we can even get info about computing, which we might talk about in a later deadlock. Knowing when one of those values is too high is a matter of experience, because it depends on the hardware we are using.
+
+00:15:50:14 - 00:16:22:16
+Unknown
+I'm currently using a MacBook Pro from 2021, which I consider to be an okay device. In terms of hardware, it's far from a gaming PC, but it's better than a week and old device, meaning that if I can hardly hold a 60 frames per second frame rate, there is something wrong and I need to fix it. Understanding how a frame is being rendered is such an interesting topic, and you will learn so much about how things are being rendered and why it takes time.
+
+00:16:22:22 - 00:16:53:00
+Unknown
+By the way, there is a blog series name behind the pretty frame that I love to read in this articles. The other inspects and unravels the tricks behind the rendering of very specific frames from Tripoli games such as Diablo four, test running, and even Elden Ring. It's complex, but it's well explained, and you might learn a few tricks that you can use in your own project to inspect frames.
+
+00:16:53:00 - 00:17:24:08
+Unknown
+In my projects, I like to use specter JS. Spectators can be used as a browser extension or as a library that you add directly into your project, and it will display every rendering step of one frame. You can see the wheel tracks being drawn in the render to get the grass being drawn all at once, because it's only one geometry, and the bushes also being drawn in one rockwall because I'm using the instance mesh.
+
+00:17:24:10 - 00:17:52:19
+Unknown
+Unfortunately, spectators doesn't seem to work with web GPU. I don't know if they are going to update it, but in the meantime I found web GPU Inspector. It's quite similar. Unfortunately, it's a little bit harder to visualize the different steps of a render, but there's a lot of data and I haven't used the tool arch. I probably just need to dig it a little bit more.
+
+00:17:52:20 - 00:18:15:00
+Unknown
+And that's it for today. Even though I don't feel like I've achieved much, it's still progress. That grass took me so much time, but I'm happy with it and the performance looks fine for now. I think I will keep on working on the visuals. Currently, the world lacks shading and I already have some ideas to improve that. Let's see how it goes.
+
+00:18:15:01 - 00:18:21:20
+Unknown
+As always, don't forget to follow me on X or blue Sky for more granular updates and I will see you in the next blog.
+

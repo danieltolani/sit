@@ -1,0 +1,28 @@
+---
+// The site menu, shared by every page. `overlay` pins it over a full-screen scene (the home page).
+interface Props { overlay?: boolean }
+const { overlay = false } = Astro.props;
+const nav = [
+  { href: '/', label: 'Home' },
+  { href: '/seats', label: 'Seats' },
+  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/parties', label: 'Parties' },
+  { href: '/facts', label: 'Numbers' },
+];
+---
+<header class:list={['top', { overlay }]}>
+  <div class="wrap bar">
+    <a class="logo" href="/">RAS<span>reserve a seat</span></a>
+    <nav>{nav.map((n) => <a href={n.href} aria-current={Astro.url.pathname === n.href ? 'page' : undefined}>{n.label}</a>)}</nav>
+  </div>
+</header>
+<style>
+  .top { background: var(--green); color: #fff; }
+  .top.overlay { position: fixed; top: 0; left: 0; right: 0; z-index: 20; }
+  .bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .4rem 1rem; padding-block: .75rem; }
+  .logo { color: #fff; text-decoration: none; font-family: var(--font-display); font-size: 1.6rem; }
+  .logo span { font-family: var(--font-body); font-size: .7rem; margin-left: .5rem; opacity: .8; text-transform: uppercase; letter-spacing: .1em; }
+  nav { display: flex; flex-wrap: wrap; gap: .4rem 1rem; }
+  nav a { color: #fff; text-decoration: none; font-weight: 600; opacity: .85; }
+  nav a[aria-current] { opacity: 1; border-bottom: 2px solid #fff; }
+</style>

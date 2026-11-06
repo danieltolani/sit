@@ -1,0 +1,55 @@
+---
+import { claimById, videoLink, toSeconds, VIDEO_URL, type Claim } from '../data/claims';
+interface Props { id?: string; claim?: Claim }
+const claim = Astro.props.claim ?? claimById(Astro.props.id!);
+const value = typeof claim.value === 'number' ? claim.value.toLocaleString('en-NG') : (claim.value ?? 'unconfirmed');
+const badge = { unverified: 'Unverified', verified: 'Verified', disputed: 'Sources disagree' }[claim.status];
+---
+<span class="stat" data-status={claim.status}>
+  <button type="button" class="val" aria-expanded="false" aria-label={`${claim.label}: ${value}. ${badge}. Show sources`}>{value}</button>
+  <span class="card" role="region" aria-label={`Sources for ${claim.label}`}>
+    <strong>{claim.label}</strong>
+    <em class="badge">{badge}{claim.verifiedBy ? ` by ${claim.verifiedBy}` : ''}</em>
+    <ul>
+      {claim.sources.map((s) => {
+        const href = s.kind === 'video' ? videoLink(s.url ?? VIDEO_URL, s.t) : s.url;
+        return (
+          <li data-kind={s.kind}>
+            <span class="kind">{s.kind}</span>
+            {href ? <a href={href} target="_blank" rel="noopener" data-seek={s.kind === 'video' && s.t ? toSeconds(s.t) : undefined}>{s.label}{s.t ? ` · ${s.t}` : ''}</a> : <span>{s.label}{s.t ? ` · ${s.t}` : ''}</span>}
+            {s.value && <span class="gives">says <b>{s.value}</b></span>}
+            {s.heard && <q>{s.heard}</q>}
+            {s.note && <small>{s.note}</small>}
+          </li>
+        );
+      })}
+    </ul>
+  </span>
+</span>
+<style>
+  .stat { position: relative; display: inline-block; }
+  .val { font: inherit; font-weight: 700; font-variant-numeric: tabular-nums; background: none; border: 0; border-bottom: 2px dotted var(--green); color: inherit; padding: 0; cursor: help; }
+  .stat[data-status='disputed'] .val { border-bottom-color: var(--taken); }
+  .stat[data-status='verified'] .val { border-bottom-style: solid; }
+  .card { position: absolute; z-index: 20; left: 0; top: calc(100% + .4rem); width: min(26rem, 88vw); padding: .9rem 1rem; border-radius: 1rem; background: #fff; color: var(--ink); box-shadow: 0 1rem 2.4rem rgb(0 0 0 / .22); font: 400 .85rem/1.35 var(--font-body); text-align: left; opacity: 0; visibility: hidden; transition: opacity .15s; }
+  .stat:hover .card, .stat:focus-within .card, .val[aria-expanded='true'] + .card { opacity: 1; visibility: visible; }
+  .badge { display: inline-block; margin-left: .5rem; padding: .05rem .5rem; border-radius: 999px; font-size: .7rem; font-style: normal; background: #eee; }
+  .stat[data-status='disputed'] .badge { background: var(--taken); color: #fff; }
+  .stat[data-status='verified'] .badge { background: var(--green); color: #fff; }
+  ul { list-style: none; margin: .6rem 0 0; padding: 0; display: grid; gap: .5rem; }
+  li { display: grid; gap: .1rem; padding-left: .6rem; border-left: 3px solid #ddd; }
+  li[data-kind='video'] { border-left-color: var(--green); }
+  li[data-kind='testimony'] { border-left-color: var(--wood); }
+  .kind { font-size: .65rem; text-transform: uppercase; letter-spacing: .08em; opacity: .6; }
+  q { font-style: italic; opacity: .85; } small { opacity: .7; }
+</style>
+<script>
+  // Touch/keyboard: tapping a value toggles its card; tapping elsewhere closes it.
+  document.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('.stat .card')) return; // clicks inside a card (e.g. a timestamp) keep it open
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.stat .val');
+    document.querySelectorAll<HTMLButtonElement>('.stat .val[aria-expanded="true"]').forEach((b) => { if (b !== btn) b.setAttribute('aria-expanded', 'false'); });
+    if (btn) btn.setAttribute('aria-expanded', String(btn.getAttribute('aria-expanded') !== 'true'));
+  });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.stat .val').forEach((b) => b.setAttribute('aria-expanded', 'false')); });
+</script>

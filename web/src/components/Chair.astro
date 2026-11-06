@@ -1,0 +1,20 @@
+---
+interface Props { label: string; tag: string; taken?: boolean }
+const { label, tag, taken = false } = Astro.props;
+---
+<figure class:list={['chair', { taken }]}>
+  <div class="tag"><strong>{label}</strong><span>{tag}</span></div>
+  <div class="back"></div>
+  <div class="seat"></div>
+  <div class="legs"><i></i><i></i></div>
+</figure>
+<style>
+  .chair { margin: 0; width: 120px; text-align: center; position: relative; }
+  .tag { background: #fff; border: 2px dashed var(--ink); border-radius: 8px; padding: .3rem .4rem; font-size: .7rem; margin-bottom: .4rem; transform: rotate(-3deg); }
+  .tag strong { display: block; font-family: var(--font-display); text-transform: uppercase; }
+  .taken .tag { border-color: var(--taken); color: var(--taken); }
+  .back { height: 56px; width: 80px; margin: 0 auto; background: var(--wood); border: 3px solid var(--wood-dark); border-radius: 10px 10px 0 0; }
+  .seat { height: 16px; width: 100px; margin: 0 auto; background: var(--wood); border: 3px solid var(--wood-dark); border-radius: 6px; }
+  .legs { display: flex; justify-content: space-between; width: 80px; margin: 0 auto; }
+  .legs i { width: 8px; height: 36px; background: var(--wood-dark); }
+</style>

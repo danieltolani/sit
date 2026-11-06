@@ -1,0 +1,302 @@
+---
+// The chair + grass scene. One component, rendered differently per page through presets (src/lib/scenes.ts):
+//   <SeatScene preset="home" fullscreen />                 home page: walkers circling the seat
+//   <SeatScene preset="state" />                           state seat page: the chair alone, framed close
+//   <SeatScene preset="state" overrides={{ oval: 0.4 }} /> any value can be overridden per use
+// The scene fills its host element (fullscreen = the whole viewport). Anything passed as children is laid over it,
+// and gets --label-x / --label-y: the on-screen point above the chair where a floating button can sit.
+import { sceneConfig, type ScenePreset, type SceneOverrides } from '../lib/scenes';
+interface Props {
+  preset: ScenePreset;
+  overrides?: SceneOverrides;
+  fullscreen?: boolean;
+  class?: string;
+  model?: string; chair?: string;
+}
+const { preset, overrides, fullscreen = false, class: className, model = '/models/dancer.glb', chair = '/models/chair.glb' } = Astro.props;
+const config = sceneConfig(preset, overrides);
+---
+<div class:list={['seat-scene', { fullscreen }, className]} data-config={JSON.stringify(config)} data-model={model} data-chair={chair}>
+  <canvas aria-hidden="true"></canvas>
+  <slot />
+</div>
+<style>
+  .seat-scene { position: relative; width: 100%; height: 100%; }
+  .seat-scene.fullscreen { position: fixed; inset: 0; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+</style>
+<script>
+  import * as THREE from 'three';
+  import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+  import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+  import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
+  import { GroundData, createGrass } from '../lib/grass';
+  import { MOVER, footTravel, ringPath, withRingPath } from '../lib/dance-path';
+  import { CRTPass } from '../lib/crt';
+  import { GrooveLayer } from '../lib/groove';
+  import type { SceneConfig } from '../lib/scenes';
+
+  const PRINT_RECOVER = 5; // seconds for a footprint to grow back
+  const OUT_OF_STEP = 0.3; // seconds each dancer is behind the one in front (0 = perfectly in sync)
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const touch = matchMedia('(pointer: coarse)').matches;
+  const deg = THREE.MathUtils.degToRad;
+
+  async function start(host: HTMLElement) {
+    const cfg: SceneConfig = JSON.parse(host.dataset.config!);
+    const canvas = host.querySelector('canvas')!;
+    const COUNT = cfg.walkers.count;
+    const TILT = deg(cfg.tilt);
+    const CHAIR_TURN = deg(cfg.chair.turn);
+    // The ground is seen at an angle, so a flat shape foreshortens by sin(TILT); stretch the world depth so it
+    // reads as `oval` on screen.
+    const DEPTH = cfg.oval / Math.sin(TILT);
+    const RING = { a: cfg.radius, b: cfg.radius * DEPTH };
+    const PATCH = { a: cfg.radius * cfg.patchReach, b: cfg.radius * cfg.patchReach * DEPTH };
+
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    const crt = cfg.look.enabled ? new CRTPass(renderer, cfg.look) : undefined; // the VHS look, if this preset wants it
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.VSMShadowMap; // wide, smooth penumbra
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 50);
+    camera.position.set(0, 10 * Math.sin(TILT) + 0.25, 10 * Math.cos(TILT));
+    camera.lookAt(0, 0.25, 0);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x886644, 2.2));
+    const sun = new THREE.DirectionalLight(0xffffff, 2);
+    sun.position.set(-4, 3.5, 1.5);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 0.5, far: 15 });
+    sun.shadow.radius = 9;
+    sun.shadow.blurSamples = 20;
+    sun.shadow.bias = -0.0004;
+    sun.shadow.normalBias = 0.02;
+    scene.add(sun);
+
+    // Invisible floor that only shows shadows, fading with distance from the nearest figure (or the chair).
+    const SOURCES = COUNT + 1;
+    const figPos = Array.from({ length: SOURCES }, () => new THREE.Vector2(999, 999));
+    const FADE = { start: 0.1, end: 1.25 };
+    const floorMat = new THREE.ShadowMaterial({ color: 0x181818, opacity: 0.4 });
+    floorMat.onBeforeCompile = (sh) => {
+      sh.uniforms.uFig = { value: figPos };
+      sh.vertexShader = sh.vertexShader
+        .replace('void main() {', 'varying vec3 vWPos;\nvoid main() {')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\n  vWPos = (modelMatrix * vec4(position, 1.0)).xyz;');
+      sh.fragmentShader = sh.fragmentShader
+        .replace('void main() {', `varying vec3 vWPos;\nuniform vec2 uFig[${SOURCES}];\nvoid main() {`)
+        .replace(
+          'gl_FragColor = vec4( color, opacity * ( 1.0 - getShadowMask() ) );',
+          `float d = 99.0;
+           for (int i = 0; i < ${SOURCES}; i++) d = min(d, distance(vWPos.xz, uFig[i]));
+           float fade = 1.0 - smoothstep(${FADE.start.toFixed(2)}, ${FADE.end.toFixed(2)}, d);
+           gl_FragColor = vec4( color, opacity * fade * ( 1.0 - getShadowMask() ) );`,
+        );
+    };
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    floor.renderOrder = -1; // after the grass's soft disc, so shadows land on top of it
+    scene.add(floor);
+
+    // Grass that remembers footprints (see lib/grass.ts).
+    const ground = new GroundData(renderer, PATCH, PRINT_RECOVER);
+    const grass = createGrass(ground, PATCH, { count: touch ? cfg.blades.touch : cfg.blades.desktop, brightness: cfg.grass.brightness });
+    scene.add(grass.group);
+
+    const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+    const motionUrls = COUNT ? cfg.walkers.motions : []; // no dancers: don't download them
+    const [chairGltf, actor, ...motions] = await Promise.all([
+      loader.loadAsync(host.dataset.chair!),
+      COUNT ? loader.loadAsync(host.dataset.model!) : undefined,
+      ...motionUrls.map((u) => loader.loadAsync(u)),
+    ]);
+
+    // The seat.
+    const chair = chairGltf.scene;
+    chair.scale.setScalar(cfg.chair.scale);
+    chair.rotation.y = CHAIR_TURN;
+    chair.position.set(cfg.chair.x, 0, cfg.chair.z);
+    chair.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.frustumCulled = false;
+      mesh.castShadow = true;
+    });
+    scene.add(chair);
+    figPos[COUNT].set(cfg.chair.x, cfg.chair.z);
+
+    // --- walkers (home preset) -------------------------------------------------------------------------
+    type Foot = { heel: THREE.Object3D; toe: THREE.Object3D; print: ReturnType<GroundData['addPrint']>; low: number; z: number; prevZ?: number; y: number };
+    type Walker = { fig: THREE.Object3D; mixer: THREE.AnimationMixer; i: number; feet: Foot[]; groove: GrooveLayer };
+    const walkers: Walker[] = [];
+    if (actor && motions.length) {
+      // Each clip carries its own travel round the ring (lib/dance-path.ts). The in-place placeholder clips get a
+      // path baked from their footwork once here; a clip that already travels would be played as it is.
+      const path = ringPath(RING.a, RING.b);
+      const sources = motions.map((m) => {
+        const clip = m!.animations[0];
+        return { clip, travel: footTravel(actor.scene, clip, cfg.walkers.scale) };
+      });
+      actor.scene.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        mesh.castShadow = true;
+        mesh.frustumCulled = false;
+        for (const m of [mesh.material].flat() as THREE.MeshStandardMaterial[]) {
+          if ('roughness' in m) { m.roughness = 1; m.metalness = 0; } // matte, like clay
+        }
+      });
+
+      // Contact shadow: small dark pool under each figure.
+      const tex = (() => {
+        const c = document.createElement('canvas');
+        c.width = c.height = 128;
+        const g = c.getContext('2d')!;
+        const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+        grad.addColorStop(0, 'rgba(20,20,20,0.5)');
+        grad.addColorStop(0.45, 'rgba(20,20,20,0.14)');
+        grad.addColorStop(1, 'rgba(20,20,20,0)');
+        g.fillStyle = grad;
+        g.fillRect(0, 0, 128, 128);
+        const t = new THREE.CanvasTexture(c);
+        t.colorSpace = THREE.SRGBColorSpace;
+        return t;
+      })();
+      const contactGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+      const contactMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+
+      // Recolour the clothes: picked out of the texture atlas by UV rectangle and by being dark (never skin).
+      const dressed = (fig: THREE.Object3D, hex: string) => {
+        const jacket = new THREE.Color(hex);
+        const trousers = jacket.clone().multiplyScalar(0.35);
+        fig.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
+          mat.customProgramCacheKey = () => 'ras-walker';
+          mat.onBeforeCompile = (sh) => {
+            sh.uniforms.uJacket = { value: jacket };
+            sh.uniforms.uTrousers = { value: trousers };
+            sh.fragmentShader = sh.fragmentShader
+              .replace('#include <common>', /* glsl */ `#include <common>
+                uniform vec3 uJacket, uTrousers;
+                float rect(vec2 uv, vec4 r) { vec2 s = step(r.xy, uv) * step(uv, r.zw); return s.x * s.y; }`)
+              .replace('#include <map_fragment>', /* glsl */ `#include <map_fragment>
+                #ifdef USE_MAP
+                vec2 auv = vMapUv;
+                float cloth = max(max(rect(auv, vec4(0.0, 0.645, 0.55, 1.0)), rect(auv, vec4(0.55, 0.36, 0.77, 1.0))),
+                                  max(rect(auv, vec4(0.25, 0.36, 0.57, 0.45)), rect(auv, vec4(0.76, 0.37, 0.90, 0.69))));
+                cloth *= 1.0 - rect(auv, vec4(0.72, 0.22, 1.0, 0.40));
+                float legs = rect(auv, vec4(0.22, 0.0, 0.76, 0.35));
+                float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+                float dark = 1.0 - smoothstep(0.08, 0.2, lum);
+                float shade = 0.45 + pow(lum, 0.45) * 2.2;
+                diffuseColor.rgb = mix(diffuseColor.rgb, uJacket * shade, cloth * dark);
+                diffuseColor.rgb = mix(diffuseColor.rgb, uTrousers * shade, legs * dark);
+                #endif`);
+          };
+          mesh.material = mat;
+        });
+      };
+
+      for (let i = 0; i < COUNT; i++) {
+        const fig = clone(actor.scene);
+        fig.name = MOVER; // the clip's travel tracks bind to this name
+        fig.scale.setScalar(cfg.walkers.scale);
+        if (cfg.walkers.outfits.length) dressed(fig, cfg.walkers.outfits[i % cfg.walkers.outfits.length]);
+        const contact = new THREE.Mesh(contactGeo, contactMat);
+        contact.scale.setScalar(0.55 / cfg.walkers.scale);
+        contact.position.y = 0.01;
+        fig.add(contact);
+        scene.add(fig);
+        // Dancers are spread evenly round the ring and only slightly out of step: being on the same beat means
+        // they push off and pause together, so they keep their spacing (one dance, danced as a group).
+        const { clip, travel } = sources[i % sources.length];
+        const t0 = (i * OUT_OF_STEP) % clip.duration;
+        const laps = Math.max(1, Math.round(travel.total / path.length));
+        const k = travel.total > 0 ? (laps * path.length) / travel.total : 0;
+        const j = Math.min(travel.times.length - 1, Math.round((t0 / clip.duration) * (travel.times.length - 1)));
+        const startAt = (i / COUNT) * path.length - travel.dist[j] * k;
+        const mixer = new THREE.AnimationMixer(fig);
+        const action = mixer.clipAction(withRingPath(clip, travel, path, startAt));
+        action.time = t0;
+        action.play();
+        mixer.update(0);
+        const feet = (['L', 'R'] as const).flatMap((s): Foot[] => {
+          const heel = fig.getObjectByName(`CC_Base_${s}_Foot`), toe = fig.getObjectByName(`CC_Base_${s}_ToeBase`);
+          return heel && toe ? [{ heel, toe, print: ground.addPrint(), low: Infinity, z: 0, y: 0 }] : [];
+        });
+        walkers.push({ fig, mixer, i, feet, groove: new GrooveLayer(fig, cfg.walkers.groove) });
+      }
+    }
+
+    const heel = new THREE.Vector3(), toe = new THREE.Vector3();
+    const stepFoot = (f: Foot) => {
+      heel.setFromMatrixPosition(f.heel.matrixWorld);
+      toe.setFromMatrixPosition(f.toe.matrixWorld);
+      const y = Math.min(heel.y, toe.y);
+      f.low = Math.min(f.low, y);
+      const planted = 1 - THREE.MathUtils.smoothstep(y, f.low + 0.01, f.low + 0.04);
+      const dx = toe.x - heel.x, dz = toe.z - heel.z;
+      const len = Math.hypot(dx, dz);
+      f.print.set((heel.x + toe.x) / 2, (heel.z + toe.z) / 2, Math.atan2(dx, dz), len * 1.5 + 0.03, len * 0.7 + 0.025, planted);
+    };
+
+    // --- framing -----------------------------------------------------------------------------------------
+    const needW = PATCH.a * 2 * grass.sandReach * cfg.fit.width + cfg.fit.pad; // the whole patch, sand fade included
+    const labelAnchor = new THREE.Vector3(
+      cfg.chair.x + cfg.label[0] * cfg.chair.scale, cfg.label[1] * cfg.chair.scale, cfg.chair.z + cfg.label[2] * cfg.chair.scale,
+    );
+    const placeLabel = (w: number, h: number) => {
+      camera.updateMatrixWorld();
+      const p = labelAnchor.clone().project(camera);
+      for (const el of [host, document.documentElement]) {
+        el.style.setProperty('--label-x', `${(p.x * 0.5 + 0.5) * w}px`);
+        el.style.setProperty('--label-y', `${(-p.y * 0.5 + 0.5) * h}px`);
+      }
+      host.dataset.label = 'ready';
+      document.documentElement.dataset.label = 'ready';
+    };
+    const resize = () => {
+      const w = host.clientWidth || innerWidth, h = host.clientHeight || innerHeight;
+      renderer.setSize(w, h, false);
+      crt?.resize();
+      const viewH = Math.max(cfg.fit.minHeight, needW / (w / h));
+      const viewW = viewH * (w / h);
+      camera.left = -viewW / 2; camera.right = viewW / 2;
+      camera.top = viewH / 2 + cfg.fit.lift; camera.bottom = -viewH / 2 + cfg.fit.lift;
+      camera.updateProjectionMatrix();
+      placeLabel(w, h);
+    };
+    resize();
+    new ResizeObserver(resize).observe(host);
+
+    // Musical chairs: "Stop" freezes the dancers (and their footprints stop fading); "Go" resumes. The grass keeps swaying.
+    let stopped = false;
+    document.addEventListener('ras:stop', () => { stopped = true; });
+    document.addEventListener('ras:go', () => { stopped = false; });
+
+    const clock = new THREE.Clock();
+    let t = 0;
+    renderer.setAnimationLoop(() => {
+      const dt = Math.min(clock.getDelta(), 0.1);
+      const animate = !reduceMotion && !document.hidden;
+      if (animate) {
+        if (!stopped) walkers.forEach((w) => { w.mixer.update(dt); w.groove.apply(t); figPos[w.i].set(w.fig.position.x, w.fig.position.z); }); // the clip moves them, the groove adds the bounce
+        t += dt;
+        grass.setTime(t);
+        if (walkers.length) {
+          scene.updateMatrixWorld();
+          walkers.forEach((w) => w.feet.forEach(stepFoot));
+        }
+      }
+      ground.update(renderer, animate && !stopped ? dt : 0);
+      if (crt) crt.render(scene, camera, reduceMotion ? 0 : t); else renderer.render(scene, camera);
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('.seat-scene').forEach((host) => { start(host); });
+</script>

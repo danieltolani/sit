@@ -1,0 +1,29 @@
+---
+// Candidates circle a chair. CSS-only placeholder; swap each .runner for the
+// 3D dancing character (see docs/DANCE-PIPELINE.md) once animations exist.
+interface Props { candidates: string[] }
+const { candidates } = Astro.props;
+const step = 360 / candidates.length;
+---
+<div class="ring" aria-label="Candidates playing musical chairs">
+  <div class="centre"><slot /></div>
+  {candidates.map((name, i) => (
+    <div class="orbit" style={`--start:${i * step}deg`}>
+      <div class="runner" data-candidate={name}>{name}</div>
+    </div>
+  ))}
+</div>
+<style>
+  .ring { position: relative; width: min(420px, 90vw); aspect-ratio: 1; margin: 2rem auto; display: grid; place-items: center; }
+  .centre { position: relative; z-index: 1; }
+  .orbit { position: absolute; inset: 0; animation: spin 8s linear infinite; transform: rotate(var(--start)); }
+  .runner {
+    position: absolute; top: 0; left: 50%; translate: -50% 0;
+    background: var(--green); color: #fff; font-weight: 700; font-size: .8rem;
+    padding: .4rem .7rem; border-radius: 999px; white-space: nowrap;
+    animation: counter 8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(calc(var(--start) + 360deg)); } }
+  @keyframes counter { to { rotate: -360deg; } }
+  @media (prefers-reduced-motion: reduce) { .orbit, .runner { animation: none; } }
+</style>

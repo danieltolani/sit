@@ -1,0 +1,27 @@
+---
+import Base from '../layouts/Base.astro';
+import Stat from '../components/Stat.astro';
+import VideoPlayer from '../components/VideoPlayer.astro';
+import { claims } from '../data/claims';
+const counts = { verified: 0, unverified: 0, disputed: 0 };
+for (const c of claims) counts[c.status]++;
+---
+<Base title="The Numbers — RAS">
+  <section class="wrap">
+    <h1>The numbers</h1>
+    <p class="lede">Every figure here shows where it came from. Hover or tap a number to see the video timestamp, what INEC's website says, and anything that disagrees.</p>
+    <p class="tally">{counts.verified} verified · {counts.unverified} unverified · {counts.disputed} disputed</p>
+    <table>
+      <thead><tr><th>Figure</th><th>Value</th></tr></thead>
+      <tbody>{claims.map((c) => <tr><td>{c.label}</td><td><Stat claim={c} /></td></tr>)}</tbody>
+    </table>
+  </section>
+  <VideoPlayer />
+</Base>
+<style>
+  .lede { max-width: 42rem; } .tally { font-size: .85rem; opacity: .7; }
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: var(--radius); }
+  th, td { text-align: left; padding: .8rem 1rem; border-bottom: 1px solid #eee; }
+  th { background: var(--green); color: #fff; }
+  th:first-child { border-top-left-radius: var(--radius); } th:last-child { border-top-right-radius: var(--radius); }
+</style>

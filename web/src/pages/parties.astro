@@ -1,0 +1,32 @@
+---
+import Base from '../layouts/Base.astro';
+import Stat from '../components/Stat.astro';
+import { getParties } from '../data/parties';
+export const prerender = false;
+const { parties, source } = await getParties();
+---
+<Base title="Parties — RAS">
+  <section class="wrap">
+    <h1>Parties</h1>
+    <p class="lede"><Stat id="registered-parties" /> registered political parties, listed from INEC's own directory.{source === 'snapshot' && ' (INEC was unreachable, so this is our last saved copy.)'}</p>
+    <ul class="grid">
+      {parties.map((p) => (
+        <li class="card">
+          <img src={p.logo} alt={`${p.name} logo`} width="72" height="72" loading="lazy" />
+          <div>
+            <h3>{p.acronym}</h3>
+            <p class="name">{p.name}</p>
+            <p class="chair">Chairman: {p.chairman}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </section>
+</Base>
+<style>
+  .lede { max-width: 42rem; }
+  .grid { list-style: none; margin: 0; padding: 1.5rem 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+  .card { display: flex; gap: 1rem; align-items: center; background: #fff; border-radius: var(--radius); padding: 1rem; }
+  .card img { width: 72px; height: 72px; object-fit: contain; border-radius: .6rem; background: #fafafa; flex: none; }
+  h3 { margin: 0; font-size: 1.3rem; } .name { margin: .1rem 0; font-weight: 600; } .chair { margin: 0; font-size: .8rem; opacity: .7; }
+</style>

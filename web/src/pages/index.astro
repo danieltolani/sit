@@ -1,0 +1,101 @@
+---
+import '../styles/global.css';
+import SeatScene from '../components/SeatScene.astro';
+import BoxNav from '../components/BoxNav.astro';
+export const prerender = false; // countdown target comes from the live INEC calendar
+import { offices } from '../data/seats';
+const office = offices[0]; // Presidential for now; other offices reuse the same card
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" href="/favicon.svg" />
+    <title>RAS</title>
+  </head>
+  <body>
+    <SeatScene preset="home" fullscreen />
+    <BoxNav />
+    <main>
+      <button class="plus" type="button" aria-label={`${office.name} seat — show details`} aria-expanded="false" aria-controls="office-card">
+        <!-- speaker glyph (placeholder until the Figma icon arrives): body + two arcs -->
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 9.5v5h3.5L13 19V5L7.5 9.5H4z" fill="currentColor" stroke="none" />
+          <path d="M16 9a4.2 4.2 0 0 1 0 6" />
+          <path d="M18.6 6.4a8 8 0 0 1 0 11.2" />
+        </svg>
+      </button>
+
+      <section class="card" id="office-card" aria-label={`${office.name} seat`}>
+        <div class="tile"><img src="/img/chair-tile.png" alt="" width="640" height="760" /></div>
+        <div class="body">
+          <h2>{office.name}</h2>
+          <p class="occupant">Occupied by {office.occupant}.</p>
+          <ul class="chips">
+            <li>{office.contestants} Contestants</li>
+            <li>{office.reservations} Reservations</li>
+          </ul>
+        </div>
+        <a class="reserve" href="/seats" aria-label={`Reserve the ${office.name} seat`}><span aria-hidden="true">+</span></a>
+      </section>
+    </main>
+  </body>
+</html>
+<style is:global>
+  body { background: radial-gradient(ellipse 75% 70% at 50% 50%, #f3f3f3 0%, #e6e6e6 60%, #d8d8d8 100%); }
+</style>
+<style>
+  main { position: relative; min-height: 100vh; }
+
+  /* the round "+" floating by the chair; position comes from SeatScene.astro */
+  .plus {
+    position: absolute; left: var(--label-x, 50%); top: var(--label-y, 50%);
+    width: 2.6rem; height: 2.6rem; border: 0; border-radius: 50%; cursor: pointer;
+    transform: translate(-50%, -50%);
+    background: var(--green); color: #fff; font: 400 1.15rem/1 var(--font-body);
+    display: grid; place-items: center; padding: 0 0 0 .1rem; /* glyph is visually left-heavy */
+    box-shadow: 0 .5rem 1.2rem rgb(0 0 0 / .18);
+    opacity: 0; transition: opacity .3s, transform .2s, background .2s;
+  }
+  :global(html[data-label='ready']) .plus { opacity: 1; }
+  .plus:hover, .plus:focus-visible { background: var(--green-dark); transform: translate(-50%, -50%) scale(1.08); outline: none; }
+
+  /* office card: hidden until the "+" is hovered, focused or tapped */
+  .card {
+    position: fixed; left: 50%; bottom: 11.5rem; width: min(62rem, 94vw); /* above the box nav */
+    display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1.5rem;
+    padding: 1.2rem 1.6rem 1.2rem 1.2rem; border-radius: 2.6rem; background: var(--green); color: #fff;
+    box-shadow: 0 1.5rem 3rem rgb(0 0 0 / .22);
+    opacity: 0; pointer-events: none; transform: translate(-50%, 1rem);
+    transition: opacity .2s .25s, transform .2s .25s; /* short delay on hide so the pointer can travel to the card */
+  }
+  .plus:hover ~ .card, .plus:focus-visible ~ .card, .card:hover, .card:focus-within, .plus[aria-expanded='true'] ~ .card {
+    opacity: 1; pointer-events: auto; transform: translate(-50%, 0); transition-delay: 0s;
+  }
+  .tile { width: 7.5rem; aspect-ratio: 3 / 4; border-radius: 1.4rem; background: #fff; display: grid; place-items: center; overflow: hidden; }
+  .tile img { width: 135%; max-width: none; height: auto; }
+  h2 { font-family: Georgia, "Times New Roman", serif; font-weight: 700; font-size: clamp(2rem, 5vw, 3.6rem); text-transform: none; letter-spacing: -.01em; margin: 0; }
+  .occupant { margin: .3rem 0 .9rem; font: 400 clamp(1rem, 2.2vw, 1.6rem) Georgia, serif; color: rgb(255 255 255 / .6); }
+  .chips { display: flex; flex-wrap: wrap; gap: .6rem; list-style: none; margin: 0; padding: 0; }
+  .chips li { padding: .5rem 1.1rem; border-radius: 999px; background: rgb(0 0 0 / .14); border: 1px solid rgb(0 0 0 / .12); font: 500 clamp(.9rem, 1.8vw, 1.4rem)/1.2 Georgia, serif; }
+  .reserve {
+    width: 4.6rem; height: 4.6rem; border-radius: 50%; background: #000; color: #fff; text-decoration: none;
+    display: grid; place-items: center; font: 300 2.6rem/1 var(--font-body); padding-bottom: .25rem; transition: transform .2s;
+  }
+  .reserve:hover, .reserve:focus-visible { transform: scale(1.08); }
+  @media (max-width: 640px) {
+    .card { grid-template-columns: auto 1fr; border-radius: 1.8rem; }
+    .tile { width: 5rem; }
+    .reserve { grid-column: 1 / -1; width: 100%; height: 3.4rem; border-radius: 999px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .card, .plus, .reserve { transition: none; } }
+</style>
+<script>
+  // Touch / keyboard: the "+" toggles the card (hover handles the desktop case in CSS).
+  const plus = document.querySelector<HTMLButtonElement>('.plus')!;
+  plus.addEventListener('click', () => {
+    plus.setAttribute('aria-expanded', String(plus.getAttribute('aria-expanded') !== 'true'));
+  });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') plus.setAttribute('aria-expanded', 'false'); });
+</script>

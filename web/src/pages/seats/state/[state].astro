@@ -1,0 +1,37 @@
+---
+// A state's governorship seat: /seats/state/kogi. The chair alone, framed close (scene preset "state").
+// Layout is a placeholder until the ReserveAseat frames (250:71219 focused render, 162:470 full view) are built in.
+import Base from '../../../layouts/Base.astro';
+import SeatScene from '../../../components/SeatScene.astro';
+import { getState, states } from '../../../data/states';
+export const prerender = false;
+
+const state = getState(Astro.params.state ?? '');
+if (!state) Astro.response.status = 404;
+---
+<Base title={state ? `${state.name} governorship — RAS` : 'Seat not found — RAS'}>
+  {state ? (
+    <section class="seat">
+      <div class="stage">
+        <SeatScene preset="state" />
+      </div>
+      <header class="wrap">
+        <p class="crumb"><a href="/seats/governorship">Governorship</a> / {state.name}</p>
+        <h1>{state.name}</h1>
+      </header>
+    </section>
+  ) : (
+    <section class="wrap">
+      <h1>No such state</h1>
+      <p>Try one of: {states.map((s, i) => <><a href={`/seats/state/${s.slug}`}>{s.name}</a>{i < states.length - 1 ? ', ' : '.'}</>)}</p>
+    </section>
+  )}
+</Base>
+<style>
+  .stage {
+    height: min(58vh, 56vw); min-height: 16rem;
+    background: radial-gradient(ellipse 75% 70% at 50% 50%, #f3f3f3 0%, #e6e6e6 60%, #d8d8d8 100%);
+  }
+  .crumb { margin: 1rem 0 .3rem; font-size: .85rem; opacity: .7; }
+  h1 { margin: 0 0 2rem; }
+</style>

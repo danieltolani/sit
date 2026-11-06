@@ -1,0 +1,28 @@
+# --- RAS repo: code + scripts on GitHub; heavy media lives in the cloud folder ---
+# Big binaries (synced via cloud folder, not git)
+Assets/
+blender/*.blend
+blender/*.blend[0-9]*
+blender/renders/
+blender/assets/
+*.mp4
+*.mov
+*.wav
+*.png.tmp
+
+# scratch
+_to_delete/
+.claude/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# web (also covered by web/.gitignore)
+web/node_modules/
+web/dist/
+web/.astro/
+.env
+.env.*

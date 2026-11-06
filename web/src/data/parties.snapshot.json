@@ -1,0 +1,156 @@
+[
+  {
+    "slug": "accord-a",
+    "name": "Accord",
+    "acronym": "A",
+    "logo": "/img/parties/accord-a_logo.jpg",
+    "chairman": "Bar. Maxwell Mgbudem"
+  },
+  {
+    "slug": "action-alliance-aa",
+    "name": "Action Alliance",
+    "acronym": "AA",
+    "logo": "/img/parties/action-alliance-aa_logo.jpg",
+    "chairman": "Hon. Adekunle Rufai Omoaje (By Court Order)"
+  },
+  {
+    "slug": "action-democratic-party-adp",
+    "name": "Action Democratic Party",
+    "acronym": "ADP",
+    "logo": "/img/parties/action-democratic-party-adp_logo.png",
+    "chairman": "Engr. Yabagi Yusuf Sani"
+  },
+  {
+    "slug": "action-peoples-party-app",
+    "name": "Action Peoples Party",
+    "acronym": "APP",
+    "logo": "/img/parties/action-peoples-party-app_logo.png",
+    "chairman": "Uchenna Nnadi"
+  },
+  {
+    "slug": "african-action-congress-aac",
+    "name": "African Action Congress",
+    "acronym": "AAC",
+    "logo": "/img/parties/african-action-congress-aac_logo.jpg",
+    "chairman": "Omoyele Sowore"
+  },
+  {
+    "slug": "african-democratic-congress-adc",
+    "name": "African Democratic Congress",
+    "acronym": "ADC",
+    "logo": "/img/parties/african-democratic-congress-adc_logo.jpg",
+    "chairman": "Sen. David Mark"
+  },
+  {
+    "slug": "all-progressives-congress-apc",
+    "name": "All Progressives Congress",
+    "acronym": "APC",
+    "logo": "/img/parties/all-progressives-congress-apc_logo.jpg",
+    "chairman": "Prof. Nentawe Yilwatda Goshwe"
+  },
+  {
+    "slug": "all-progressives-grand-alliance-apga",
+    "name": "All Progressives Grand Alliance",
+    "acronym": "APGA",
+    "logo": "/img/parties/all-progressives-grand-alliance-apga_logo.jpg",
+    "chairman": "Barrister Sylvester Ezeokenwa"
+  },
+  {
+    "slug": "allied-peoples-movement-apm",
+    "name": "Allied Peoples Movement",
+    "acronym": "APM",
+    "logo": "/img/parties/allied-peoples-movement-apm_logo.jpg",
+    "chairman": "Yusuf Mamman Dantalle"
+  },
+  {
+    "slug": "boot-party-bp",
+    "name": "Boot Party",
+    "acronym": "BP",
+    "logo": "/img/parties/boot-party-bp_logo.jpg",
+    "chairman": "Adenuga Sunday"
+  },
+  {
+    "slug": "democratic-leadership-alliance-dla",
+    "name": "Democratic Leadership Alliance",
+    "acronym": "DLA",
+    "logo": "/img/parties/democratic-leadership-alliance-dla_logo.jpg",
+    "chairman": "Barr. Samuel M. Memeh"
+  },
+  {
+    "slug": "labour-party-lp",
+    "name": "Labour Party",
+    "acronym": "LP",
+    "logo": "/img/parties/labour-party-lp_logo.jpg",
+    "chairman": "Sen. Nenadi E. Usman"
+  },
+  {
+    "slug": "national-democratic-party",
+    "name": "National Democratic Party",
+    "acronym": "NDP",
+    "logo": "/img/parties/national-democratic-party_logo.jpg",
+    "chairman": "Hon. Ada Elizabeth Fredrick Okwori (By Court Order)"
+  },
+  {
+    "slug": "national-rescue-movement-nrm",
+    "name": "National Rescue Movement",
+    "acronym": "NRM",
+    "logo": "/img/parties/national-rescue-movement-nrm_logo.png",
+    "chairman": "Prince (Dr.) Chinedu Obi"
+  },
+  {
+    "slug": "new-nigeria-peoples-party-nnpp",
+    "name": "New Nigeria Peoples Party",
+    "acronym": "NNPP",
+    "logo": "/img/parties/new-nigeria-peoples-party-nnpp_logo.jpg",
+    "chairman": "Dr. Agbo Gilbert Major"
+  },
+  {
+    "slug": "nigeria-democratic-congress",
+    "name": "Nigeria Democratic Congress",
+    "acronym": "NDC",
+    "logo": "/img/parties/nigeria-democratic-congress_logo.jpeg",
+    "chairman": "Sen. Cleopas Moses Zuwoghe (By Court Order)"
+  },
+  {
+    "slug": "peoples-democratic-party-pdp",
+    "name": "Peoples Democratic Party",
+    "acronym": "PDP",
+    "logo": "/img/parties/peoples-democratic-party-pdp_logo.png",
+    "chairman": "Hon. Abdulrahman Mohammed"
+  },
+  {
+    "slug": "peoples-redemption-party-prp",
+    "name": "Peoples Redemption Party",
+    "acronym": "PRP",
+    "logo": "/img/parties/peoples-redemption-party-prp_logo.png",
+    "chairman": "Dr. Hakeem Baba-Ahmed"
+  },
+  {
+    "slug": "social-democratic-party-sdp",
+    "name": "Social Democratic Party",
+    "acronym": "SDP",
+    "logo": "/img/parties/social-democratic-party-sdp_logo.png",
+    "chairman": "Prof. Sadiq Umar Abubakar Gombe"
+  },
+  {
+    "slug": "young-progressive-party-ypp",
+    "name": "Young Progressives Party",
+    "acronym": "YPP",
+    "logo": "/img/parties/young-progressive-party-ypp_logo.jpeg",
+    "chairman": "Comrade Bishop Amakiri"
+  },
+  {
+    "slug": "youth-party-yp",
+    "name": "Youth Party",
+    "acronym": "YP",
+    "logo": "/img/parties/youth-party-yp_logo.png",
+    "chairman": "Mr. Abdulraham Abubakar"
+  },
+  {
+    "slug": "zenith-labour-party-zlp",
+    "name": "Zenith Labour Party",
+    "acronym": "ZLP",
+    "logo": "/img/parties/zenith-labour-party-zlp_logo.jpg",
+    "chairman": "Chief Dan Nwanyanwu, OFR"
+  }
+]

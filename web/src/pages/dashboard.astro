@@ -1,0 +1,25 @@
+---
+import Base from '../layouts/Base.astro';
+import { listSeats } from '../data/seats';
+export const prerender = false;
+// TODO: gate behind auth once accounts exist.
+const seats = [...listSeats()].sort((a, b) => b.reservedBy - a.reservedBy);
+const total = seats.reduce((n, s) => n + s.reservedBy, 0);
+---
+<Base title="Dashboard — RAS">
+  <section class="wrap">
+    <h1>Dashboard</h1>
+    <p><strong>{total}</strong> seats reserved so far.</p>
+    <table>
+      <thead><tr><th>Office</th><th>Candidate</th><th>Party</th><th>Reserved</th></tr></thead>
+      <tbody>
+        {seats.map((s) => <tr><td>{s.office}</td><td>{s.candidate}</td><td>{s.party}</td><td>{s.reservedBy}</td></tr>)}
+      </tbody>
+    </table>
+  </section>
+</Base>
+<style>
+  table { width: 100%; border-collapse: collapse; background: #fff; border-radius: var(--radius); overflow: hidden; }
+  th, td { text-align: left; padding: .7rem 1rem; border-bottom: 1px solid #eee; }
+  th { background: var(--green); color: #fff; }
+</style>

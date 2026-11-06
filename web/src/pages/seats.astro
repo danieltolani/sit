@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+import SeatGrid from '../components/SeatGrid.astro';
+import { listSeats, seatTypes } from '../data/seats';
+export const prerender = false;
+---
+<Base title="Seats — RAS">
+  <section class="wrap">
+    <h1>Seats</h1>
+    <nav class="types" aria-label="Seat types">{seatTypes.map((t) => <a href={`/seats/${t.slug}`}>{t.name}</a>)}</nav>
+    <SeatGrid seats={listSeats()} />
+  </section>
+</Base>
+<style>
+  .types { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+  .types a { padding: .4rem 1rem; border-radius: 999px; background: #fff; text-decoration: none; font-weight: 600; }
+  .types a:hover { background: var(--green); color: #fff; }
+</style>

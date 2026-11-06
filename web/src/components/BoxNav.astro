@@ -1,0 +1,106 @@
+---
+// The boxed navigation (OVRA Figma 634:244): three groups along the bottom of the screen, each a header box
+// over a row of buttons, 1px outlines, Suisse Int'l Medium. "Stop" is the musical-chairs control: it pauses
+// the dancers (dispatches `ras:stop` / `ras:go` on `document`, which SeatScene listens for).
+// Colours come from --nav-ink (outline + text) and --nav-bg (page behind), so the same component works on a
+// light page (default here) or the dark one the design was drawn on: set --nav-ink: #fff on a dark page.
+import { getCalendar } from '../data/calendar';
+const { elections } = await getCalendar();
+const next = elections.find((e) => e.status !== 'Concluded' && Date.parse(e.startsAt) > Date.now());
+const days = next ? Math.max(0, Math.ceil((Date.parse(next.startsAt) - Date.now()) / 86_400_000)) : null;
+const short = next ? next.date.replace(/^(\w{3})\w* (\d+),.*$/, '$1 $2') : ''; // "January 16, 2027" -> "Jan 16"
+const here = Astro.url.pathname;
+const cur = (href: string) => (here === href ? 'page' : undefined);
+---
+<nav class="boxnav" aria-label="Site">
+  <section class="group" aria-labelledby="g-info">
+    <a class="box head" id="g-info" href="/facts">Info.</a>
+    <div class="row">
+      <a class="box lead" href="/facts" aria-current={cur('/facts')}>???</a>
+      <a class="box" href="/parties" aria-current={cur('/parties')}>Voting</a>
+      <a class="box" href="/dashboard" aria-current={cur('/dashboard')}>Gen.</a>
+    </div>
+  </section>
+
+  <section class="group" aria-labelledby="g-vote">
+    <a class="box head" id="g-vote" href="/">Voting?</a>
+    <div class="row">
+      <button class="box lead stop" type="button" aria-pressed="false" data-stop="Stop" data-go="Go">Stop</button>
+      <a class="box days" href="/" data-target={next?.startsAt}>
+        {days !== null ? <><b>{days}</b>Days<i aria-hidden="true">•</i>{short}</> : 'No date yet'}
+      </a>
+    </div>
+  </section>
+
+  <section class="group" aria-labelledby="g-seats">
+    <a class="box head" id="g-seats" href="/seats" aria-current={cur('/seats')}>Seats</a>
+    <div class="row">
+      <a class="box lead" href="/seats/presidential" aria-current={cur('/seats/presidential')}>Presidential</a>
+      <a class="box" href="/seats/governorship" aria-current={cur('/seats/governorship')}>Gov.</a>
+      <a class="box" href="/seats" aria-current={cur('/seats')}>All.</a>
+    </div>
+  </section>
+</nav>
+<style>
+  .boxnav {
+    --nav-ink: var(--ink);
+    --nav-stop: #bc1616;
+    --nav-go: var(--green);
+    /* 19.387px at the 1512px design width, easing down on narrower screens */
+    --box-font: 500 clamp(0.95rem, 1.28vw, 1.212rem)/0.97 "Suisse Int'l", "Suisse Intl", "Helvetica Neue", Arial, system-ui, sans-serif;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 15;
+    display: flex; justify-content: space-between; gap: 2rem;
+    padding: 1rem clamp(1rem, 8.3vw, 7.875rem) 2.4rem; /* 126px side margin at 1512 */
+    color: var(--nav-ink);
+    pointer-events: none; /* the scene underneath stays hoverable between the groups */
+  }
+  .group { display: flex; flex-direction: column; gap: 13px; width: 368px; max-width: 32vw; pointer-events: auto; }
+  .row { display: flex; gap: 14px; }
+  .box {
+    display: flex; align-items: center; justify-content: center;
+    box-sizing: border-box; min-height: 55px; padding: 17px 23px;
+    border: 1px solid currentColor; background: transparent; color: inherit;
+    font: var(--box-font); letter-spacing: 0.02em; text-decoration: none; white-space: nowrap; cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .head { width: 100%; padding: 18px 24px; }
+  .lead { flex: 0 0 150px; }
+  .row .box:not(.lead) { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .row .days { flex: 1 1 auto; } /* never clips the date */
+  .box:hover, .box:focus-visible { background: var(--nav-ink); color: var(--cream); outline: none; }
+  .box[aria-current='page'] { background: var(--nav-ink); color: var(--cream); }
+  .stop { background: var(--nav-stop); border-color: var(--nav-stop); color: #fff; }
+  .stop:hover, .stop:focus-visible { background: #a01212; border-color: #a01212; color: #fff; }
+  .stop[aria-pressed='true'] { background: var(--nav-go); border-color: var(--nav-go); }
+  .days b { font-weight: inherit; font-variant-numeric: tabular-nums; }
+  .days i { font-style: normal; margin: 0 .6em; }
+
+  @media (max-width: 1100px) {
+    .boxnav { gap: 1rem; padding-inline: 1rem; }
+    .group { max-width: none; flex: 1 1 0; width: auto; }
+    .group:nth-child(2) { flex-grow: 1.25; } /* the date needs the room */
+    .lead { flex: 1 1 0; }
+    .box { padding-inline: 10px; }
+  }
+  @media (max-width: 720px) {
+    .boxnav { flex-direction: column; gap: .75rem; padding-bottom: 1rem; max-height: 60vh; overflow: auto; }
+    .group { width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) { .box { transition: none; } }
+</style>
+<script>
+  // Stop / Go: pause and resume the scene (musical chairs). Days tick over at midnight without a reload.
+  const stop = document.querySelector<HTMLButtonElement>('.boxnav .stop');
+  stop?.addEventListener('click', () => {
+    const stopped = stop.getAttribute('aria-pressed') !== 'true';
+    stop.setAttribute('aria-pressed', String(stopped));
+    stop.textContent = stopped ? stop.dataset.go! : stop.dataset.stop!;
+    document.dispatchEvent(new CustomEvent(stopped ? 'ras:stop' : 'ras:go'));
+  });
+  const days = document.querySelector<HTMLElement>('.boxnav .days');
+  const target = days?.dataset.target ? Date.parse(days.dataset.target) : NaN;
+  if (days && !Number.isNaN(target)) {
+    const tick = () => { const b = days.querySelector('b'); if (b) b.textContent = String(Math.max(0, Math.ceil((target - Date.now()) / 86_400_000))); };
+    setInterval(tick, 60_000);
+  }
+</script>
